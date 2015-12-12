@@ -1,0 +1,70 @@
+really sorry! im a bit hard to contact unless im expecting to be contacted.
+
+pitch: graduated from college in 2014, worked in forestry, travelling, freelancing
+
+why google: big company lots of different interesting opportunities, esp because i enjoy thinking about algorithms. freelance = much smaller scale problems
+			also, get to work with a team. working alone means you learn less and have less people to bounce ideas off of. also a bit lonely
+
+recent projects: tesselate, game, cognitive edge, acte, tenminutedungeon, gameoflife
+websockets, react, angular, elm, flask, netbeans,
+interested in lots of things, love learning, think google would have interesting opportunities
+
+less recent hardware projects: robotics, making kits for people to make custom medical devices - arduino
+
+strength: hardworking and task oriented, creative, love trying/learning new things/flexible
+weakness: lack of expertise in a specific thing: my background is a mix between math, ee, cs, and wilderness
+
+problem encountered: 
+-board generation being slow
+-solution: instead of using arays of arrays which in elm is implemented with rbb trees, used flat array
+still too slow,
+memoized
+still too slow,
+changed elm native arrays to compile differently for equality testing.
+
+took risk and failed: 
+
+
+ask questions: 
+which teams will i be interviewing with/ or is that up in the air
+how easily is it to move around projects at google
+
+
+describe a cool recent project: tesselate in elm - i made it because i love escher and have made many escher like paintings. hand drawing is hard and designing shapes is harder. I'm also really interested in wallpaper groups.
+works as just a static webpage. you can drag edges around to make shapes and it automatically tiles the figures and links the right edges together so that a change in one edge means a change in another edge. works by each shape being a regular tesselatable polygon with each side being a list of points. sides are linked together in a tesselation and the symetry groups are applied to create a tesselation pattern.
+
+
+							
+
+NLP
+Most Challenging: Many research papers that required in depth prior knowledge about NLP and machine learning.
+What You Learned: scraping, regex, databases
+Most Interesting: testing different theories for storing meaning of words and identifying context
+Hardest Bug: not really a bug, but I was not familiar with a lot of the machine learning approaches at the time and had to reinvent hacky replacements.
+Enjoyed Most: freedom to try many approaches, explore many research topics, and focus on a portion I was interested in
+Conflicts with Teammates: I was hired half way through freshman year and our supervisor expected us to manually enter relations and definitions of words. I thought the process was tedious and built a tool to automate it.
+
+Tesselate
+Most Challenging: using mouse signal in Elm to create drag effect
+What You Learned: more elm, got more familiar with wallpaper patterns
+Most Interesting: thinking about the symetries of polygon tesselations
+Hardest Bug: using mouse signal in Elm to create drag effect
+Enjoyed Most: making art from generated tesselations
+Conflicts with Teammates: no teamates
+
+game
+Most Challenging: developing a scheme for multiuser capabilities and implementing it in flask
+What You Learned: how to create a full stack project
+Most Interesting: designing the board game engine to allow for a large variety of gridded board based games
+Hardest Bug: flask-socketio
+Enjoyed Most: being able to play variants of games that are hard to find on the internet using something i made
+Conflicts with Teammates: none
+
+pov
+Most Challenging: finding components that are fast enough, getting sensor with enough accuracy and resolution, reducing power consumption
+What You Learned: making and designing the entire system
+Most Interesting: high speed reading data/ how to store the data so that it uses very little space and can be read out fast enough to produce a nice result
+Hardest Bug: bad soldering job/noise from how I routed the wires
+Enjoyed Most: riding around with the coolest stationary display pov bike wheel in town.
+Conflicts with Teammates: no teamates
+
