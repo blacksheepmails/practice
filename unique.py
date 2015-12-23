@@ -79,9 +79,10 @@ def mergeSort(xs):
 
 class Heap():
 	def __init__(self, initialHeap=[]):
-		self.heap = []
-		for x in initialHeap:
-			self.insert(x)
+		self.buildHeap(initialHeap)
+		# self.heap = []
+		# for x in initialHeap:
+		# 	self.insert(x)
 	def getParentIndex(self,i): #should be private
 		return (i-1)//2
 	def getChild1Index(self,i):
@@ -121,8 +122,8 @@ class Heap():
 		self.heapUp(len(self.heap)-1)
 	def buildHeap(self,xs):
 		self.heap = xs
-		for i in range(0, len(self.heap)).reversed():
-			heapDown(i)
+		for i in reversed(range(0, len(self.heap))):
+			self.heapDown(i)
 	def pop(self):
 		temp = self.heap[0]
 		self.heap[0] = self.heap.pop()
@@ -130,6 +131,7 @@ class Heap():
 		return temp
 	def merge(self, heap):
 		self.buildHeap(self.heap.concat(heap))
+# print(Heap([8,5,9,3,1,10,13,12,6,2,0,4]).heap)
 
 def quicksort(xs):
 	if len(xs) <= 1:
@@ -573,7 +575,7 @@ def modExp(x,e,m):
 		p = (p*p) % m
 	return ans
 def isPrimeFermat(n):
-	for a in primes(10):
+	for a in primes(19):
 		if n == a:
 			return True
 		if n == 1:
@@ -1179,5 +1181,231 @@ def multiprocessingTest():
 			p2.wait()
 	print(lines)
 
-if __name__ == '__main__':
-	multiprocessingTest()
+# if __name__ == '__main__':
+# 	multiprocessingTest()
+
+def euler51():
+	for n in range(100000):
+		s = str(n)
+		for i in range(len(s)):
+			for j in range(i, len(s)):
+				for k in range(j, len(s)):
+					family = []
+					for m in range(10):
+						x = int(s[:i] + str(m) + s[i:j] + str(m) + s[j:k] + str(m) + s[k:])
+						if isPrimeFermat(x) and len(str(x)) == len(s) + 3:
+							family.append(x)
+					if len(family) >= 8:
+						print(family)
+						return sorted(family)[0]
+def euler54():
+	def ordNum(c):
+		if c == 'A':
+			return 12
+		if c == 'K':
+			return 11
+		if c == 'Q':
+			return 10
+		if c == 'J':
+			return 9
+		if c == 'T':
+			return 8
+		return int(c)-2
+	def isFlush(hand):
+		suit = hand[1][1]
+		return all([c[1] == suit for c in hand])
+	def isStraight(hand):
+		ns = sorted([ordNum(c[0]) for c in hand])
+		if ns == list(range(ns[0], ns[0]+5)):
+			return True
+		return False
+	def straightFlush(hand):
+		if isFlush(hand) and isStraight(hand):
+			return highestCard(hand) * 13**9
+	def four(hand):
+		ns = sorted([ordNum(c[0]) for c in hand])
+		if ns[0] == ns[3] or ns[1] == ns[4]:
+			return ns[2] * 13**8 + highCard(hand)
+	def fullHouse(hand):
+		ns = sorted([ordNum(c[0]) for c in hand])
+		if ns[0] == ns[2]:
+			if ns[3] == ns[4]:
+				return ns[0] * 13**7
+		if ns[2] == ns[4]:
+			if ns[0] == ns[1]:
+				return ns[4] * 13**7
+	def flush(hand):
+		if isFlush(hand):
+			return 13**6 + highCard(hand)
+	def straight(hand):
+		if isStraight(hand):
+			return highestCard(hand) * 13**5
+	def three(hand):
+		ns = sorted([ordNum(c[0]) for c in hand])
+		for i in range(3):
+			if ns[i] == ns[i+1] and ns[i+1] == ns[i+2]:
+				return ns[i] * 13**4
+	def twoPairs(hand):
+		ns = [ordNum(c[0]) for c in hand]
+		m = {}
+		for n in ns:
+			if n in m:
+				m[n] += 1
+			else:
+				m[n] = 1
+		pairs = []
+		for x in m:
+			if m[x] == 2:
+				pairs.append(x)
+		if len(pairs) == 2:
+			return max(pairs) * 13**3 + min(pairs) * 13**2 + highestCard(hand)
+	def two(hand):
+		ns = [ordNum(c[0]) for c in hand]
+		m = {}
+		for n in ns:
+			if n in m:
+				m[n] += 1
+			else:
+				m[n] = 1
+		for x in m:
+			if m[x] == 2:
+				return x * 13**1 + highCard(hand)
+	def highestCard(hand):
+		ns = [ordNum(c[0]) for c in hand]
+		return max(ns)
+	def highCard(hand):
+		ns = sorted([ordNum(c[0]) for c in hand])
+		ans = 0.0
+		for n in ns:
+			ans += n
+			ans /= 13
+		return ans
+	def value(hand):
+		order = [straightFlush, four, fullHouse, flush, straight, three, twoPairs, two, highCard]
+		for f in order:
+			v = f(hand)
+			if v != None:
+				return v
+	p1 = 0
+	f = open("p054_poker.txt", "r")
+	for line in f:
+		cards = line.split(' ')
+		if value(cards[:5]) > value(cards[5:]):
+			p1 += 1
+	return p1
+def sumDigits(n):
+	return sum([int(x) for x in str(n)])
+def euler56():
+	return max([sumDigits(a**b) for a in range(100) for b in range(100)])
+def euler57():
+	rt2s = [[1]+[2]*i for i in range(1,1001)]
+	def reduceFraction(xs, z):
+		for x in reversed(xs):
+			(n,d) = z
+			z = (x*n + d, n)
+		return z
+	reduced = [reduceFraction(x,(2,1)) for x in rt2s]
+	return len([1 for (x,y) in reduced if len(str(x)) > len(str(y))])
+
+def euler58():
+	def primeCorners(n):
+		corners = [(2*n+1)**2 - 2*n*i for i in range(4)]
+		return list(filter(isPrimeFermat, corners))
+	allPrimeCorners = []
+	i = 0
+	while len(allPrimeCorners)/(4*i+1) >= 0.1 or i==0:
+		i += 1
+		allPrimeCorners += primeCorners(i)
+	return i*2+1
+
+def charRange(start, end): #like range for chars, but inclusive both sides
+	for i in range(ord(start), ord(end)+1):
+		yield chr(i)
+
+def euler59():
+	def decode(cipher, key):
+		keystring = [ord(k) for k in key] * (len(cipher)//len(key) + 1)
+		return [cipher[i]^keystring[i] for i in range(len(cipher))]
+	def isCorrect(text):
+		e = 0
+		t = 0
+		for x in text:
+			if x == ord('e') or x == ord('E'):
+				e += 1
+			if x == ord('t') or x == ord('T'):
+				t += 1
+		return e / len(text) > 0.1 and t/len(text) > 0.06
+	f = open("p059_cipher.txt", "r")
+	cipher = [int(x) for x in f.read().split(',')]
+	for a in charRange('a','z'):
+		for b in charRange('a','z'):
+			for c in charRange('a','z'):
+				key = a + b + c
+				decoded = decode(cipher,key)
+				if isCorrect(decoded):
+					return sum(decoded)
+def permute2(xs):
+	if len(xs) <= 1:
+		return xs
+	ps = permute2(xs[1:])
+	permutations = []
+	for i in range(len(xs)):
+		for p in ps:
+			inP = xs[0] in p
+			if not inP or (inP and p.index(xs[0]) >= i) :
+				permutations.append(p[:i] + xs[0] + p[i:])
+	return permutations
+
+def euler62():
+	cubes = [x**3 for x in range(100000)]
+	memo = {}
+	for c in cubes:
+		h = str(sorted(str(c)))
+		if h in memo:
+			memo[h].append(c)
+			if len(memo[h]) == 5:
+				return min(memo[h])
+		else:
+			memo[h] = [c]
+def choices(xs, n):
+	if len(xs) < n:
+		return []
+	if len(xs) == n:
+		return [xs]
+	if n == 1:
+		return [[x] for x in xs]
+	xsNew = xs[1:]
+	return choices(xsNew, n) + [x + [xs[0]] for x in choices(xsNew, n-1)]
+def euler60():
+	ps = list(primes(10000))
+	memo = {}
+	def addMemo(k, v):
+		nonlocal memo
+		if k in memo:
+			memo[k].add(v)
+		else:
+			memo[k] = set([v])
+	for i in range(len(ps)):
+		for j in range(i+1, len(ps)):
+			si = str(ps[i])
+			sj = str(ps[j])
+			if isPrimeFermat(int(si+sj)) and isPrimeFermat(int(sj+si)):
+				addMemo(ps[i], ps[j])
+				addMemo(ps[j], ps[i])
+	print('here')
+	possibilities = []
+	for p in memo:
+		for c in choices(list(memo[p]), 4):
+			intersection = set(memo[p])
+			intersection.add(p)
+			for e in c:
+				newSet = set(memo[e])
+				newSet.add(e)
+				intersection = intersection & newSet
+				if len(intersection) < 4:
+					break
+			if len(intersection) >= 4:
+				print(intersection)
+				possibilities.append(intersection)
+	return sorted(possibilities, key=lambda x: sum(x))[-1]
+

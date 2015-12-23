@@ -26,8 +26,9 @@ took risk and failed:
 
 
 ask questions: 
-which teams will i be interviewing with/ or is that up in the air
-how easily is it to move around projects at google
+what is a typical day working at google like
+what are you favorite and least favorite things about working at google
+how does google train their new hires in the technology they use
 
 
 describe a cool recent project: tesselate in elm - i made it because i love escher and have made many escher like paintings. hand drawing is hard and designing shapes is harder. I'm also really interested in wallpaper groups.
