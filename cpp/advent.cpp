@@ -65,7 +65,6 @@ int day2part2 () {
     int a, b, c;
     char x;
     sstream >> a >> x >> b >> x >> c;
-    // cout << a << 'x' << b << 'x' << c << endl;
     int bow = a*b*c;
     int sides[] = {a, b, c};
     int maxSide = *max_element(sides, sides+3);
