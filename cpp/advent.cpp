@@ -991,7 +991,6 @@ vector<Ingredient> combos(vector<Ingredient> ingredients, int teaspoons) {
   vector<Ingredient> ans;
   if (ingredients.size() == 1) {
     ans.push_back(ingredients[0].times(teaspoons));
-    if(ans[0].teaspoons>100) cout <<"here"<<endl;
     return ans;
   }
   vector<Ingredient> tail(ingredients.begin() + 1, ingredients.end());
@@ -1054,7 +1053,7 @@ int day15part2() {
   return maxScore;
 }
 
- bool isAunt(map<string,int> evidence, map<string,int> memory) {
+bool isAunt(map<string,int> evidence, map<string,int> memory) {
   for(map<string,int>::iterator thing = memory.begin(); thing != memory.end(); ++thing) {
     if (evidence[thing->first] != thing->second) return false;
   }
@@ -1352,7 +1351,31 @@ int day19part1() {
 }
 
 
+int day20part1() {
+ size_t size = 1000000;
+  int factors[size];
+  for (int i = 1; i < size; ++i) factors[i] = 0;
+  for (int i = 1; i < size; ++i) {
+    for (int j = i; j < size; j += i) 
+      factors[j] += 10*i;
+    if (factors[i] >= 29000000) return i;
+  }
+  return 0;
+}
+
+int day20part2() {
+  size_t size = 1000000;
+  int factors[size];
+  for (int i = 1; i < size; ++i) factors[i] = 0;
+  for (int i = 1; i < size; ++i) {
+    for (int j = 1; j <= 50 && i*j < size; ++j) 
+      factors[i*j] += 11*i;
+    if (factors[i] >= 29000000) return i;
+  }
+  return 0;
+}
+
 int main () {
-  cout << day19part1() << endl;
+  cout << day20part2() << endl;
   return 0;
 }
