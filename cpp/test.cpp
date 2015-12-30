@@ -97,8 +97,10 @@ int day21part1() {
 	item_t armor[] = {item_t(13,0,1), item_t(31,0,2), item_t(53,0,3), item_t(75,0,4), item_t(102,0,5)};
 	item_t rings[] = {item_t(25,1,0), item_t(50,2,0), item_t(100,3,0), item_t(20,0,1), item_t(40,0,2), item_t(80,0,3)};
 
-	player_t x(8,5,5), y(12,7,2);
-
+	vector<item_t> items1;
+	items1.push_back(weapons[0])
+	vector<item_t> items2;
+	player_t x(100,items1), y(100,items2);
 
 	cout << isWinner(x,y) << endl;
 	return 0;
