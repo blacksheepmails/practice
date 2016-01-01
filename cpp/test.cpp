@@ -1,112 +1,263 @@
-#include <iostream>     // std::cin, std::cout
+#include <iostream>     // std::cin, std:://cout
 #include <fstream>      // std::ifstream
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <numeric>
+#include <stack>
+#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 using namespace std;
 
-// struct replacement_t
-// {
-// 	string start;
-// 	string end;
-// };
+class Effect;
 
-// void substitute(map<string,bool> *table, vector<replacement_t> replacements) {
-// 	vector<string> elements;
-// 	for (map<string,bool>::iterator element = table->begin(); element != table->end(); ++element) {
-// 		elements.push_back(element->first);
-// 	}
+struct GameState {
+	int mana;
+	int cost;
+	vector<Effect*> effects;
+	int myShield;
+	int myHP;
+	int bossHP;
+	int bossDamage;
+	GameState(int, int, int, int);
+	GameState(const GameState&);
+};
 
-// 	for (int j = 0; j < elements.size(); j++) {
-// 		string element = elements[j];
-// 		for (int i = 0; i < replacements.size(); i++) {
-// 		  	size_t found = element.find(replacements[i].start);
-// 		  	while (found != string::npos) {
-// 		  		string newElement = element;
-// 		  		newElement.replace(found, replacements[i].start.length(), replacements[i].end);
-// 		  		(*table)[newElement] = true;
-// 		  		found = element.find(replacements[i].start, found+1);
-// 		  	}
-// 		 }
-// 	}
-// }
-// int day19part1() {
-//   ifstream stream("input19.txt");
-//   string line;
-//   vector<replacement_t> replacements;
-//   map<string,bool> table;
-//   string medicine;
-//   while (getline(stream, line)) {
-//   	if (line == "") break;
-//   	stringstream ss(line);
-//   	string dummy;
-//   	replacement_t r;
-//   	ss >> r.start >> dummy >> r.end;
-//   	replacements.push_back(r);
-//   }
-//   stream >> medicine;
-//   stream.close();
-//   table["e"] = true;
-//   int step = 0;
-//   while (table.find(medicine) == table.end()) {
-//   	substitute(&table, replacements);
-//   	step++;
-//   	cout<<step<<endl;
-//   }
-//   return step;
-// }
-// int main () {
-//   cout << day19part1() << endl;
-//   return 0;
-// }
+class Effect {
+	public:
+		int turnsLeft;
+		int cost;
+		virtual bool trigger(GameState *g) = 0; 			//return true when finished
+		virtual Effect* clone() = 0;
+		Effect(int c, int t) : cost(c), turnsLeft(t) {}
+};
+class Shield : public Effect {
+	public:
+		virtual bool trigger(GameState *g) {
+			turnsLeft--;
+			g->myShield = 7;
+			//cout << "shields" << " b" << g->bossHP << " m" << g->myHP << endl;
+			return turnsLeft == 0;
+		}
+		Shield():Effect(113,6){}
+		Shield(const Shield& x):Effect(x.cost, x.turnsLeft){}
+		virtual Shield* clone() {
+			//cout << "newShield ";
+			return new Shield(*this);
+		}
+};
 
-struct player_t {
-	int hp;
-	int damage;
-	int armor;
-	player_t(int h, int d, int a):hp(h),damage(d),armor(a) {}
-	player_t(int h, vector<item_t> items):hp(h),damage(0),armor(0) {
-		for (int i = 0; i < items.size(); i++) {
-			damage += items[i].damage;
-			armor += items[i].armor;
+class Poison : public Effect {
+	public:
+		virtual bool trigger(GameState *g) {
+			turnsLeft--;
+			g->bossHP -= 3;
+			//cout << "poison" << " b" << g->bossHP << " m" << g->myHP << endl;
+			return turnsLeft == 0;
+		}
+		Poison():Effect(173,6){}
+		Poison(const Poison& x):Effect(x.cost, x.turnsLeft){}
+		virtual Poison* clone() {
+			//cout << "newPoison ";
+			return new Poison(*this);
+		}
+};
+class Recharge : public Effect {
+	public:
+		virtual bool trigger(GameState *g) {
+			turnsLeft--;
+			g->mana += 101;
+			//cout << "recharge" << " b" << g->bossHP << " m" << g->myHP << " mana" << g->mana << endl;
+			return turnsLeft == 0;
+		}
+		Recharge():Effect(229,5){}
+		Recharge(const Recharge& x):Effect(x.cost, x.turnsLeft){}
+		virtual Recharge* clone() {
+			//cout << "newRecharge ";
+			return new Recharge(*this);
+		}
+};
+
+class Spell {
+	public:
+		int cost;
+		virtual void trigger(GameState *g) = 0;
+		Spell(int c):cost(c){}
+};
+class MagicMissile : public Spell {
+	public:
+		virtual void trigger(GameState *g) {
+			g->bossHP -= 4;
+			//cout << "magic missile" << " b" << g->bossHP << " m" << g->myHP << endl;
+		}
+		MagicMissile():Spell(53){}
+};
+class Drain : public Spell {
+	public:
+		virtual void trigger(GameState *g) {
+			g->bossHP -= 2;
+			g->myHP += 2;
+			//cout << "draining" << " b" << g->bossHP << " m" << g->myHP << endl;
+		}
+		Drain():Spell(73){}
+};
+
+bool bossMove(GameState *g) { //returns if i am killed
+	g->myHP = g->myHP - max(g->bossDamage-g->myShield, 1);
+	return g->myHP <= 0;
+}
+void triggerEvents(GameState *g) {
+	g->myShield = 0;
+
+	for (int i = 0; i < g->effects.size(); i++) {					//triggers effects. 
+		//cout << g->effects[i]->cost;
+		if (g->effects[i]->trigger(g)) {
+			//delete the effect
+			g->effects.erase(g->effects.begin() + i);
+			i--;
 		}
 	}
-};
-struct item_t {
-	int cost;
-	int damage;
-	int armor;
-    item_t(int c, int d, int a):cost(c),damage(d),armor(a) {}
-};
-
-
-bool isWinner(player_t x, player_t y) { //player x goes first, returns if x wins.
-	int xDamagePerTurn = max(1, y.damage - x.armor);
-	int yDamagePerTurn = max(1, x.damage - y.armor);
-	if (x.hp / xDamagePerTurn >= y.hp / yDamagePerTurn) return true;
-	return false;
+	//cout << "shield" << g->myShield << ' ';
 }
 
-int day21part1() {
-	player_t opponent(109,8,2);
+GameState::GameState(int m, int h1, int h2, int d) {
+	mana = m;
+	cost = 0;
+	myShield = 0;
+	myHP = h1;
+	bossHP = h2;
+	bossDamage = d;
+}
+GameState::GameState(const GameState& g) {
+	mana = g.mana;
+	cost = g.cost;
+	for (int i = 0; i < g.effects.size(); i++){
+		effects.push_back(g.effects[i]->clone());
+	}
+	myShield = g.myShield;
+	myHP = g.myHP;
+	bossHP = g.bossHP;
+	bossDamage = g.bossDamage;
+}
 
-	item_t weapons[] = {item_t(8,4,0), item_t(10,5,0), item_t(25,6,0), item_t(40,7,0), item_t(74,8,0)};
-	item_t armor[] = {item_t(13,0,1), item_t(31,0,2), item_t(53,0,3), item_t(75,0,4), item_t(102,0,5)};
-	item_t rings[] = {item_t(25,1,0), item_t(50,2,0), item_t(100,3,0), item_t(20,0,1), item_t(40,0,2), item_t(80,0,3)};
 
-	vector<item_t> items1;
-	items1.push_back(weapons[0])
-	vector<item_t> items2;
-	player_t x(100,items1), y(100,items2);
+int day22part2() {
+	stack<GameState> q;
+	vector<Effect*> effects;
+	Shield shieldEffect = Shield();
+	Poison poisonEffect = Poison();
+	Recharge rechargeEffect = Recharge();
+	effects.push_back(&shieldEffect);
+	effects.push_back(&poisonEffect);
+	effects.push_back(&rechargeEffect);
 
-	cout << isWinner(x,y) << endl;
-	return 0;
+	vector<Spell*> spells;
+	MagicMissile magicMissileSpell = MagicMissile();
+	Drain drainSpell = Drain();
+	spells.push_back(&magicMissileSpell);
+	spells.push_back(&drainSpell);
+
+	int minCost = 9999999;
+	
+	q.push(GameState(500, 50, 51, 9));
+	// q.push(GameState(250, 10, 14, 8));
+	// //cout << '(';
+	while ( !q.empty() ) {
+		// //cout << q.size() << 'm' << minCost << ' ';
+		GameState g = q.top();
+		q.pop();
+		//cout << endl << "(b" << g.bossHP << " p" << g.myHP << endl;
+		g.myHP--;
+		if (g.myHP <= 0) continue;
+		else {
+			triggerEvents(&g);
+			if (g.bossHP <= 0) {						//if boss dies now, update minCost, move next node
+				if ((g.cost) < minCost) {
+					minCost = g.cost;
+				}
+				//cout << "win. myhp: "<<g.myHP << ' ';
+			} 
+			else {									//ok, boss lives
+				for (int i = 0; i < spells.size(); i++) {
+					Spell *spell = spells[i];
+					if (g.cost + spell->cost < minCost && g.mana - spell->cost >= 0) {
+						GameState f(g);
+						spell->trigger(&f);
+						f.cost += spell->cost;
+						f.mana -= spell->cost;
+						//cout << "sc" << spell->cost << "gc" << f.cost << endl;
+
+						if (f.bossHP <= 0) {				//boss dies, update minCost
+							if ((f.cost) < minCost) minCost = f.cost;
+							//cout << "win. myhp: "<<f.myHP << ' ';
+						}
+						else {
+							triggerEvents(&f);
+							if (f.bossHP <= 0) {				//boss dies, update minCost
+								if ((f.cost) < minCost) {
+									minCost = f.cost;
+								}
+								//cout << "win. myhp: "<<f.myHP << ' ';
+							}
+							else if (!bossMove(&f)) {
+								//cout << "push";
+								q.push(f); //if boss doesnt win, push new GameState f
+							}
+							//else //cout << "lostA";
+						}
+					}
+				}
+				for (int i = 0; i < effects.size(); i++) {
+					Effect *effect = effects[i];
+					bool active = false;
+					for (int j = 0; j < g.effects.size(); j++) {
+						if (effect->cost == g.effects[j]->cost) active = true;
+					}
+					if (!active && g.cost + effect->cost < minCost && g.mana-effect->cost >= 0) {
+						GameState f(g);
+						f.effects.push_back(effect->clone());
+						f.cost += effect->cost;
+						f.mana -= effect->cost;
+						//cout << "ec" << effect->cost << "gc" << f.cost << endl;
+						//cout << "numEffects" << f.effects.size() << ' ';
+						triggerEvents(&f);
+						if (f.bossHP <= 0) {				//boss dies, update minCost
+								if ((f.cost) < minCost) {
+									minCost = f.cost;
+								}
+								//cout << "win. myhp: "<<f.myHP << ' ';
+							}
+						else if (!bossMove(&f)) {
+							//cout << "push";
+							q.push(f);
+						}
+						//else //cout << "lostB. myHP:" << f.myHP<<endl;
+					}
+				}
+			}
+				//cout << ')';
+		}
+	}
+	return minCost;
 }
 
 int main () {
-  cout << day21part1() << endl;
+  cout << day22part2() << endl;
   return 0;
 }
+
+// void print2DVector(vector <vector<int> > xs) {
+// 	for (int i = 0; i < xs.size(); i++) {
+// 		for (int j = 0; j < xs[i].size(); j++) //cout << xs[i][j] << ", ";
+// 		//cout << endl;
+// 	}
+// 	//cout << endl;
+// }
+// void printVector(vector<int> xs) {
+// 	for (int i = 0; i < xs.size(); i++) {
+// 		//cout << xs[i];
+// 	}
+// 	//cout << endl;
+// }

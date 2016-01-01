@@ -5,9 +5,11 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <numeric>
+#include <stack>
 
 #include "md5.h"
-
+#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 using namespace std;
 
@@ -154,6 +156,7 @@ string intToString(int n) {
   return convert.str();
 }
 
+/////INPUT yzbqklnj
 int day4() {
   string key = "yzbqklnj";
   int n = 0;
@@ -611,6 +614,7 @@ string lookAndSay(string s) {
   return ans += intToString(c) + intToString(prev);
 }
 
+////////INPUT 1113122113
 int day10part1() {
   string line = "1113122113";
   for (int i = 0; i < 40; i++) {
@@ -662,6 +666,7 @@ bool has2UniquePairs(string s) {
   return false;
 }
 
+////////INPUT vzbxkghb
 string day11part1() {
   string pwd = "vzbxkghb";
   string bad[] = {"i", "o", "l"};
@@ -1351,6 +1356,45 @@ int day19part1() {
 }
 
 
+int createMedicine(vector<replacement_t> replacements, string medicine) {
+  string element = medicine;
+  int steps = 0;
+  while (element != "e") {
+    for (int i = 0; i < replacements.size(); i++) {
+      size_t found = element.find(replacements[i].end);
+      if (found != string::npos) {
+        element.replace(found, replacements[i].end.length(), replacements[i].start);
+        steps++;
+      }
+    }
+  }
+  return steps;
+}
+bool lengthAsKey(replacement_t a, replacement_t b) {
+  return a.end.length()-a.start.length() < b.end.length()-b.start.length();
+}
+int day19part2() {
+  ifstream stream("input19.txt");
+  string line;
+  vector<replacement_t> replacements;
+  map<string,bool> table;
+  string medicine;
+  while (getline(stream, line)) {
+    if (line == "") break;
+    stringstream ss(line);
+    string dummy;
+    replacement_t r;
+    ss >> r.start >> dummy >> r.end;
+    replacements.push_back(r);
+  }
+  stream >> medicine;
+  stream.close();
+  sort(replacements.begin(), replacements.end(), lengthAsKey);
+  cout <<"here"<<endl;
+  return createMedicine(replacements, medicine);
+}
+
+////////////INPUT 29000000
 int day20part1() {
  size_t size = 1000000;
   int factors[size];
@@ -1375,7 +1419,706 @@ int day20part2() {
   return 0;
 }
 
+struct item_t {
+  int cost;
+  int damage;
+  int armor;
+  item_t(int c, int d, int a):cost(c),damage(d),armor(a) {}
+};
+
+struct player_t {
+  int hp;
+  int damage;
+  int armor;
+  player_t(int h, int d, int a):hp(h),damage(d),armor(a) {}
+  player_t(int h, vector<item_t> items):hp(h),damage(0),armor(0) {
+    for (int i = 0; i < items.size(); i++) {
+      damage += items[i].damage;
+      armor += items[i].armor;
+    }
+  }
+};
+
+bool isWinner(player_t x, player_t y) { //player x goes first, returns if x wins.
+  int xDamagePerTurn = max(1, y.damage - x.armor);
+  int yDamagePerTurn = max(1, x.damage - y.armor);
+  if (x.hp / xDamagePerTurn >= y.hp / yDamagePerTurn) return true;
+  return false;
+}
+
+int totalCost(vector<item_t> items) {
+  int ans = 0;
+  for (int i = 0; i < items.size(); i++)
+    ans += items[i].cost;
+  return ans;
+}
+
+template<class T> vector< vector<T> > choose(vector<T> xs, int n) {
+  vector< vector<T> > ans;
+  if (n == 1) {
+    for (int i = 0; i < xs.size(); i++) {
+      vector<T> choice;
+      choice.push_back(xs[i]);
+      ans.push_back(choice);
+    }
+    return ans;
+  }
+  if (n == xs.size()) {
+    ans.push_back(xs);
+    return ans;
+  }
+  vector<T> xsCopy = vector<T>(xs);
+  xsCopy.erase(xsCopy.begin());
+  vector< vector<T> > usingCurr = choose(xsCopy, n-1);
+  vector< vector<T> > notUsingCurr = choose(xsCopy, n);
+  for (int i = 0; i < usingCurr.size(); i++) {
+    usingCurr[i].push_back(xs[0]);
+    ans.push_back(usingCurr[i]);
+  }
+  ans.insert(ans.end(), notUsingCurr.begin(), notUsingCurr.end());
+  return ans;
+}
+
+///INPUT
+// Hit Points: 109
+// Damage: 8
+// Armor: 2
+int day21part1() {
+  player_t opponent(109,8,2);
+
+  item_t weapons[] = {item_t(8,4,0), item_t(10,5,0), item_t(25,6,0), item_t(40,7,0), item_t(74,8,0)};
+  item_t armor[] = {item_t(13,0,1), item_t(31,0,2), item_t(53,0,3), item_t(75,0,4), item_t(102,0,5)};
+  item_t rings[] = {item_t(25,1,0), item_t(50,2,0), item_t(100,3,0), item_t(20,0,1), item_t(40,0,2), item_t(80,0,3)};
+  vector<item_t> ringsVector(rings, rings + ARRAY_SIZE(rings));
+  vector< vector<item_t> > choices = choose(ringsVector, 3);
+  vector< vector<item_t> > choicesTemp = choose(ringsVector, 2);
+  choices.insert(choices.end(), choicesTemp.begin(), choicesTemp.end());
+  choicesTemp = choose(ringsVector, 1);
+  choices.insert(choices.end(), choicesTemp.begin(), choicesTemp.end());
+
+  vector< vector<item_t> > combos;
+  for (int w = 0; w < ARRAY_SIZE(weapons); w++) {
+    for (int r = 0; r < choices.size(); r++) {
+      for (int a = 0; a < ARRAY_SIZE(armor); a++) {
+        vector<item_t> items;
+        items.push_back(weapons[w]);
+        items.push_back(armor[a]);
+        items.insert(items.end(), choices[r].begin(), choices[r].end());
+        combos.push_back(items);
+      }
+      vector<item_t> itemsNoArmor;
+      itemsNoArmor.push_back(weapons[w]);
+      itemsNoArmor.insert(itemsNoArmor.end(), choices[r].begin(), choices[r].end());
+      combos.push_back(itemsNoArmor);
+    }
+  }
+  int minCost = 10000;
+  for (int i = 0; i < combos.size(); i++) {
+    player_t me(100,combos[i]);
+    int cost = totalCost(combos[i]);
+    if (isWinner(me, opponent) && cost < minCost) minCost = cost;
+  }
+  return minCost;
+}
+
+
+int day21part2() {
+  player_t opponent(109,8,2);
+
+  item_t weapons[] = {item_t(8,4,0), item_t(10,5,0), item_t(25,6,0), item_t(40,7,0), item_t(74,8,0)};
+  item_t armor[] = {item_t(13,0,1), item_t(31,0,2), item_t(53,0,3), item_t(75,0,4), item_t(102,0,5)};
+  item_t rings[] = {item_t(25,1,0), item_t(50,2,0), item_t(100,3,0), item_t(20,0,1), item_t(40,0,2), item_t(80,0,3)};
+  vector<item_t> ringsVector(rings, rings + ARRAY_SIZE(rings));
+  vector< vector<item_t> > choices = choose(ringsVector, 3);
+  vector< vector<item_t> > choicesTemp = choose(ringsVector, 2);
+  choices.insert(choices.end(), choicesTemp.begin(), choicesTemp.end());
+  choicesTemp = choose(ringsVector, 1);
+  choices.insert(choices.end(), choicesTemp.begin(), choicesTemp.end());
+
+  vector< vector<item_t> > combos;
+  for (int w = 0; w < ARRAY_SIZE(weapons); w++) {
+    for (int r = 0; r < choices.size(); r++) {
+      for (int a = 0; a < ARRAY_SIZE(armor); a++) {
+        vector<item_t> items;
+        items.push_back(weapons[w]);
+        items.push_back(armor[a]);
+        items.insert(items.end(), choices[r].begin(), choices[r].end());
+        combos.push_back(items);
+      }
+      vector<item_t> itemsNoArmor;
+      itemsNoArmor.push_back(weapons[w]);
+      itemsNoArmor.insert(itemsNoArmor.end(), choices[r].begin(), choices[r].end());
+      combos.push_back(itemsNoArmor);
+    }
+  }
+  int maxCost = 0;
+  for (int i = 0; i < combos.size(); i++) {
+    player_t me(100,combos[i]);
+    int cost = totalCost(combos[i]);
+    if ( (!isWinner(me, opponent)) && cost > maxCost) maxCost = cost;
+  }
+  return maxCost;
+}
+
+
+class Effect;
+
+struct GameState {
+  int mana;
+  int cost;
+  vector<Effect*> effects;
+  int myShield;
+  int myHP;
+  int bossHP;
+  int bossDamage;
+  GameState(int, int, int, int);
+  GameState(const GameState&);
+};
+
+class Effect {
+  public:
+    int turnsLeft;
+    int cost;
+    virtual bool trigger(GameState *g) = 0;       //return true when finished
+    virtual Effect* clone() = 0;
+    Effect(int c, int t) : cost(c), turnsLeft(t) {}
+};
+class Shield : public Effect {
+  public:
+    virtual bool trigger(GameState *g) {
+      turnsLeft--;
+      g->myShield = 7;
+      //cout << "shields" << " b" << g->bossHP << " m" << g->myHP << endl;
+      return turnsLeft == 0;
+    }
+    Shield():Effect(113,6){}
+    Shield(const Shield& x):Effect(x.cost, x.turnsLeft){}
+    virtual Shield* clone() {
+      //cout << "newShield ";
+      return new Shield(*this);
+    }
+};
+
+class Poison : public Effect {
+  public:
+    virtual bool trigger(GameState *g) {
+      turnsLeft--;
+      g->bossHP -= 3;
+      //cout << "poison" << " b" << g->bossHP << " m" << g->myHP << endl;
+      return turnsLeft == 0;
+    }
+    Poison():Effect(173,6){}
+    Poison(const Poison& x):Effect(x.cost, x.turnsLeft){}
+    virtual Poison* clone() {
+      //cout << "newPoison ";
+      return new Poison(*this);
+    }
+};
+class Recharge : public Effect {
+  public:
+    virtual bool trigger(GameState *g) {
+      turnsLeft--;
+      g->mana += 101;
+      //cout << "recharge" << " b" << g->bossHP << " m" << g->myHP << " mana" << g->mana << endl;
+      return turnsLeft == 0;
+    }
+    Recharge():Effect(229,5){}
+    Recharge(const Recharge& x):Effect(x.cost, x.turnsLeft){}
+    virtual Recharge* clone() {
+      //cout << "newRecharge ";
+      return new Recharge(*this);
+    }
+};
+
+class Spell {
+  public:
+    int cost;
+    virtual void trigger(GameState *g) = 0;
+    Spell(int c):cost(c){}
+};
+class MagicMissile : public Spell {
+  public:
+    virtual void trigger(GameState *g) {
+      g->bossHP -= 4;
+      //cout << "magic missile" << " b" << g->bossHP << " m" << g->myHP << endl;
+    }
+    MagicMissile():Spell(53){}
+};
+class Drain : public Spell {
+  public:
+    virtual void trigger(GameState *g) {
+      g->bossHP -= 2;
+      g->myHP += 2;
+      //cout << "draining" << " b" << g->bossHP << " m" << g->myHP << endl;
+    }
+    Drain():Spell(73){}
+};
+
+bool bossMove(GameState *g) { //returns if i am killed
+  g->myHP = g->myHP - max(g->bossDamage-g->myShield, 1);
+  return g->myHP <= 0;
+}
+void triggerEvents(GameState *g) {
+  g->myShield = 0;
+
+  for (int i = 0; i < g->effects.size(); i++) {         //triggers effects. 
+    //cout << g->effects[i]->cost;
+    if (g->effects[i]->trigger(g)) {
+      //delete the effect
+      g->effects.erase(g->effects.begin() + i);
+      i--;
+    }
+  }
+  //cout << "shield" << g->myShield << ' ';
+}
+
+GameState::GameState(int m, int h1, int h2, int d) {
+  mana = m;
+  cost = 0;
+  myShield = 0;
+  myHP = h1;
+  bossHP = h2;
+  bossDamage = d;
+}
+GameState::GameState(const GameState& g) {
+  mana = g.mana;
+  cost = g.cost;
+  for (int i = 0; i < g.effects.size(); i++){
+    effects.push_back(g.effects[i]->clone());
+  }
+  myShield = g.myShield;
+  myHP = g.myHP;
+  bossHP = g.bossHP;
+  bossDamage = g.bossDamage;
+}
+
+/////INPUT boss hitpoint: 51, boss damage: 9
+int day22part1() {
+  stack<GameState> q;
+  vector<Effect*> effects;
+  Shield shieldEffect = Shield();
+  Poison poisonEffect = Poison();
+  Recharge rechargeEffect = Recharge();
+  effects.push_back(&shieldEffect);
+  effects.push_back(&poisonEffect);
+  effects.push_back(&rechargeEffect);
+
+  vector<Spell*> spells;
+  MagicMissile magicMissileSpell = MagicMissile();
+  Drain drainSpell = Drain();
+  spells.push_back(&magicMissileSpell);
+  spells.push_back(&drainSpell);
+
+  int minCost = 9999999;
+  
+  q.push(GameState(500, 50, 51, 9));
+  // q.push(GameState(250, 10, 14, 8));
+  // //cout << '(';
+  while ( !q.empty() ) {
+    // //cout << q.size() << 'm' << minCost << ' ';
+    GameState g = q.top();
+    q.pop();
+    //cout << endl << "(b" << g.bossHP << " p" << g.myHP << endl;
+
+    triggerEvents(&g);
+    if (g.bossHP <= 0) {            //if boss dies now, update minCost, move next node
+      if ((g.cost) < minCost) {
+        minCost = g.cost;
+      }
+      //cout << "win. myhp: "<<g.myHP << ' ';
+    } 
+    else {                  //ok, boss lives
+      for (int i = 0; i < spells.size(); i++) {
+        Spell *spell = spells[i];
+        if (g.cost + spell->cost < minCost && g.mana - spell->cost >= 0) {
+          GameState f(g);
+          spell->trigger(&f);
+          f.cost += spell->cost;
+          f.mana -= spell->cost;
+          //cout << "sc" << spell->cost << "gc" << f.cost << endl;
+
+          if (f.bossHP <= 0) {        //boss dies, update minCost
+            if ((f.cost) < minCost) minCost = f.cost;
+            //cout << "win. myhp: "<<f.myHP << ' ';
+          }
+          else {
+            triggerEvents(&f);
+            if (f.bossHP <= 0) {        //boss dies, update minCost
+              if ((f.cost) < minCost) {
+                minCost = f.cost;
+              }
+              //cout << "win. myhp: "<<f.myHP << ' ';
+            }
+            else if (!bossMove(&f)) {
+              //cout << "push";
+              q.push(f); //if boss doesnt win, push new GameState f
+            }
+            //else //cout << "lostA";
+          }
+        }
+      }
+      for (int i = 0; i < effects.size(); i++) {
+        Effect *effect = effects[i];
+        bool active = false;
+        for (int j = 0; j < g.effects.size(); j++) {
+          if (effect->cost == g.effects[j]->cost) active = true;
+        }
+        if (!active && g.cost + effect->cost < minCost && g.mana-effect->cost >= 0) {
+          GameState f(g);
+          f.effects.push_back(effect->clone());
+          f.cost += effect->cost;
+          f.mana -= effect->cost;
+          //cout << "ec" << effect->cost << "gc" << f.cost << endl;
+          //cout << "numEffects" << f.effects.size() << ' ';
+          triggerEvents(&f);
+          if (f.bossHP <= 0) {        //boss dies, update minCost
+              if ((f.cost) < minCost) {
+                minCost = f.cost;
+              }
+              //cout << "win. myhp: "<<f.myHP << ' ';
+            }
+          else if (!bossMove(&f)) {
+            //cout << "push";
+            q.push(f);
+          }
+          //else //cout << "lostB. myHP:" << f.myHP<<endl;
+        }
+      }
+        //cout << ')';
+    }
+  }
+  return minCost;
+}
+
+
+int day22part2() {
+  stack<GameState> q;
+  vector<Effect*> effects;
+  Shield shieldEffect = Shield();
+  Poison poisonEffect = Poison();
+  Recharge rechargeEffect = Recharge();
+  effects.push_back(&shieldEffect);
+  effects.push_back(&poisonEffect);
+  effects.push_back(&rechargeEffect);
+
+  vector<Spell*> spells;
+  MagicMissile magicMissileSpell = MagicMissile();
+  Drain drainSpell = Drain();
+  spells.push_back(&magicMissileSpell);
+  spells.push_back(&drainSpell);
+
+  int minCost = 9999999;
+  
+  q.push(GameState(500, 50, 51, 9));
+  // q.push(GameState(250, 10, 14, 8));
+  // //cout << '(';
+  while ( !q.empty() ) {
+    // //cout << q.size() << 'm' << minCost << ' ';
+    GameState g = q.top();
+    q.pop();
+    //cout << endl << "(b" << g.bossHP << " p" << g.myHP << endl;
+    g.myHP--;
+    if (g.myHP <= 0) continue;
+    else {
+      triggerEvents(&g);
+      if (g.bossHP <= 0) {            //if boss dies now, update minCost, move next node
+        if ((g.cost) < minCost) {
+          minCost = g.cost;
+        }
+        //cout << "win. myhp: "<<g.myHP << ' ';
+      } 
+      else {                  //ok, boss lives
+        for (int i = 0; i < spells.size(); i++) {
+          Spell *spell = spells[i];
+          if (g.cost + spell->cost < minCost && g.mana - spell->cost >= 0) {
+            GameState f(g);
+            spell->trigger(&f);
+            f.cost += spell->cost;
+            f.mana -= spell->cost;
+            //cout << "sc" << spell->cost << "gc" << f.cost << endl;
+
+            if (f.bossHP <= 0) {        //boss dies, update minCost
+              if ((f.cost) < minCost) minCost = f.cost;
+              //cout << "win. myhp: "<<f.myHP << ' ';
+            }
+            else {
+              triggerEvents(&f);
+              if (f.bossHP <= 0) {        //boss dies, update minCost
+                if ((f.cost) < minCost) {
+                  minCost = f.cost;
+                }
+                //cout << "win. myhp: "<<f.myHP << ' ';
+              }
+              else if (!bossMove(&f)) {
+                //cout << "push";
+                q.push(f); //if boss doesnt win, push new GameState f
+              }
+              //else //cout << "lostA";
+            }
+          }
+        }
+        for (int i = 0; i < effects.size(); i++) {
+          Effect *effect = effects[i];
+          bool active = false;
+          for (int j = 0; j < g.effects.size(); j++) {
+            if (effect->cost == g.effects[j]->cost) active = true;
+          }
+          if (!active && g.cost + effect->cost < minCost && g.mana-effect->cost >= 0) {
+            GameState f(g);
+            f.effects.push_back(effect->clone());
+            f.cost += effect->cost;
+            f.mana -= effect->cost;
+            //cout << "ec" << effect->cost << "gc" << f.cost << endl;
+            //cout << "numEffects" << f.effects.size() << ' ';
+            triggerEvents(&f);
+            if (f.bossHP <= 0) {        //boss dies, update minCost
+                if ((f.cost) < minCost) {
+                  minCost = f.cost;
+                }
+                //cout << "win. myhp: "<<f.myHP << ' ';
+              }
+            else if (!bossMove(&f)) {
+              //cout << "push";
+              q.push(f);
+            }
+            //else //cout << "lostB. myHP:" << f.myHP<<endl;
+          }
+        }
+      }
+        //cout << ')';
+    }
+  }
+  return minCost;
+}
+
+
+int day23part1() {
+  ifstream stream("input23.txt");
+  string line;
+  vector<string> program;
+  while (getline(stream, line)) program.push_back(line);
+  int i = 0;
+  map<char, int> registers;
+  registers['a'] = 0;
+  registers['b'] = 0;
+  while (i < program.size() && i >= 0) {
+    stringstream ss(program[i]);
+    string instruction;
+    ss >> instruction;
+    if (instruction == "hlf") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] / 2;
+      i++;
+    }
+    else if (instruction == "tpl") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] * 3;
+      i++;
+    }
+    else if (instruction == "inc") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] + 1;
+      i++;
+    }
+    else if (instruction == "jmp") {
+      int offset;
+      char sign;
+      ss >> sign >> offset;
+      if (sign == '-') i = i - offset;
+      else i = i + offset;
+    }
+    else if (instruction == "jie") {
+      char reg, sign;
+      string dummy;
+      int offset;
+      ss >> reg >> dummy >> sign >> offset;
+      int newIndex;
+      if (sign == '-') newIndex = i - offset;
+      else newIndex = i + offset;
+      if (registers[reg] % 2 == 0) i = newIndex;
+      else i++;
+    }
+    else if (instruction == "jio") {
+      char reg, sign;
+      string dummy;
+      int offset;
+      ss >> reg >> dummy >> sign >> offset;
+      int newIndex;
+      if (sign == '-') newIndex = i - offset;
+      else newIndex = i + offset;
+      if (registers[reg] == 1) i = newIndex;
+      else i++;
+
+    }
+  }
+  return registers['b'];
+}
+
+int day23part2() {
+  ifstream stream("input23.txt");
+  string line;
+  vector<string> program;
+  while (getline(stream, line)) program.push_back(line);
+  int i = 0;
+  map<char, int> registers;
+  registers['a'] = 1;
+  registers['b'] = 0;
+  while (i < program.size() && i >= 0) {
+    stringstream ss(program[i]);
+    string instruction;
+    ss >> instruction;
+    if (instruction == "hlf") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] / 2;
+      i++;
+    }
+    else if (instruction == "tpl") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] * 3;
+      i++;
+    }
+    else if (instruction == "inc") {
+      char reg;
+      ss >> reg;
+      registers[reg] = registers[reg] + 1;
+      i++;
+    }
+    else if (instruction == "jmp") {
+      int offset;
+      char sign;
+      ss >> sign >> offset;
+      if (sign == '-') i = i - offset;
+      else i = i + offset;
+    }
+    else if (instruction == "jie") {
+      char reg, sign;
+      string dummy;
+      int offset;
+      ss >> reg >> dummy >> sign >> offset;
+      int newIndex;
+      if (sign == '-') newIndex = i - offset;
+      else newIndex = i + offset;
+      if (registers[reg] % 2 == 0) i = newIndex;
+      else i++;
+    }
+    else if (instruction == "jio") {
+      char reg, sign;
+      string dummy;
+      int offset;
+      ss >> reg >> dummy >> sign >> offset;
+      int newIndex;
+      if (sign == '-') newIndex = i - offset;
+      else newIndex = i + offset;
+      if (registers[reg] == 1) i = newIndex;
+      else i++;
+
+    }
+  }
+  return registers['b'];
+}
+
+
+long long int qe(vector<int> xs) {
+  long long int ans = 1;
+  for (int i = 0; i < xs.size(); i++) ans *= xs[i];
+  return ans;
+}
+
+struct node24
+{
+  int n;
+  vector<int> xs;
+  vector<int> thusFar;
+  node24(int a, vector<int> b, vector<int> c) : n(a), xs(b), thusFar(c) {}
+};
+
+vector <vector<int> > sumUpTo(int n, vector<int> xs) {
+  int minSize = 9999;
+  vector <vector<int> > ans;
+  stack <node24> s;
+  s.push(node24(n, xs, vector<int>()));
+  while(s.size() > 0) {
+    node24 x = s.top();
+    s.pop();
+    if (x.thusFar.size() > minSize) continue;
+    else if (x.n == 0) {
+      if (x.thusFar.size() < minSize) minSize = x.thusFar.size();
+      ans.push_back(x.thusFar);
+    }
+    else if (x.n > accumulate(x.xs.begin(), x.xs.end(), 0)) continue;
+    else if (x.n < 0) continue;
+    else if (x.xs.size() == 0) continue;
+    else {
+      vector<int> thusFarUsingX(x.thusFar);
+      thusFarUsingX.push_back(x.xs[0]);
+      vector<int> xsWithoutX(x.xs);
+      xsWithoutX.erase(xsWithoutX.begin());
+      s.push(node24(x.n-x.xs[0], xsWithoutX, thusFarUsingX));
+      s.push(node24(x.n, xsWithoutX, x.thusFar));
+    }
+  }
+  return ans;
+}
+
+long long int day24part1() {
+  ifstream stream("input24.txt");
+  int weight;
+  vector<int> weights;
+  while (stream >> weight) weights.push_back(weight);
+  weight = 0;
+  for (int i = 0; i < weights.size(); i++) weight += weights[i];
+  weight = weight/3; //weight now holds target weight value
+  vector< vector<int> > firstGroup = sumUpTo(weight, weights);
+
+  long long int minQE = 99999999999;
+  for (int i = 0; i < firstGroup.size(); i++) {
+    if (qe(firstGroup[i]) < minQE) {
+      minQE = qe(firstGroup[i]);
+    }
+  }
+  return minQE;
+}
+
+long long int day24part2() {
+  ifstream stream("input24.txt");
+  int weight;
+  vector<int> weights;
+  while (stream >> weight) weights.push_back(weight);
+  weight = 0;
+  for (int i = 0; i < weights.size(); i++) weight += weights[i];
+  weight = weight/4; //weight now holds target weight value
+  vector< vector<int> > firstGroup = sumUpTo(weight, weights);
+
+  long long int minQE = 99999999999;
+  for (int i = 0; i < firstGroup.size(); i++) {
+    if (qe(firstGroup[i]) < minQE) {
+      minQE = qe(firstGroup[i]);
+    }
+  }
+  return minQE;
+}
+
+////INPUT To continue, please consult the code grid in the manual.  Enter the code at row 3010, column 3019.
+unsigned long long int day25part1() {
+  int r = 3010, c = 3019;
+  // int r = 2, c = 5;
+  int d = c+r-1;
+  int i = (d*(d+1))/2 - r + 1;
+  unsigned long long int m = 252533LL, q = 33554393LL;
+  int k;
+  unsigned long long int ans = 20151125LL;
+  for (k = 1; k < i; k++) {
+    ans = (ans * m) % q;
+  }
+  return ans;
+}
+
 int main () {
-  cout << day20part2() << endl;
+  cout << day24part2() << endl;
   return 0;
 }
